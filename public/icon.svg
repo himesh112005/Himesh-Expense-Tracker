@@ -1,16 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="128" fill="#0B0F17"/>
-  <circle cx="256" cy="256" r="210" fill="#111827" stroke="#1F2937" stroke-width="8"/>
-  <circle cx="256" cy="256" r="160" fill="url(#grad)" />
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366F1"/>
-      <stop offset="100%" stop-color="#4F46E5"/>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1524" />
+      <stop offset="50%" stop-color="#141E32" />
+      <stop offset="100%" stop-color="#090D16" />
     </linearGradient>
+
+    <!-- Border Glow Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.8" />
+      <stop offset="33%" stop-color="#34A853" stop-opacity="0.6" />
+      <stop offset="66%" stop-color="#FBBC04" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#EA4335" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Blue Pillar Gradient -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- Green Pillar Gradient -->
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80" />
+      <stop offset="100%" stop-color="#16A34A" />
+    </linearGradient>
+
+    <!-- Rupee Loop Gradient -->
+    <linearGradient id="rupeeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="35%" stop-color="#38BDF8" />
+      <stop offset="70%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F87171" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="glowShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#4285F4" flood-opacity="0.35" />
+    </filter>
+    
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
   </defs>
-  <!-- Rupee Symbol -->
-  <text x="50%" y="58%" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="220" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">₹</text>
-  <!-- Accent Dots -->
-  <circle cx="370" cy="140" r="18" fill="#10B981" />
-  <circle cx="140" cy="370" r="18" fill="#F59E0B" />
+
+  <!-- Squircle Base Canvas -->
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="6" />
+
+  <!-- Inner Subtle Grid Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#1E2B42" stroke-width="2" stroke-dasharray="8 8" opacity="0.6" />
+
+  <!-- Glow Backdrop -->
+  <circle cx="256" cy="256" r="120" fill="#4285F4" opacity="0.08" filter="blur(30px)" />
+
+  <!-- MONOGRAM "H" + "₹" EMBLEM -->
+  <g filter="url(#glowShadow)">
+    <!-- Left Pillar of 'H' (Blue) -->
+    <rect x="120" y="125" width="48" height="262" rx="24" fill="url(#blueGrad)" />
+
+    <!-- Right Pillar of 'H' (Green) -->
+    <rect x="344" y="125" width="48" height="262" rx="24" fill="url(#greenGrad)" />
+
+    <!-- Upper Rupee Strike Bar (connecting H with Rupee) -->
+    <rect x="120" y="195" width="272" height="32" rx="16" fill="url(#rupeeGrad)" />
+
+    <!-- Lower Rupee Strike Bar -->
+    <rect x="120" y="255" width="220" height="32" rx="16" fill="url(#rupeeGrad)" />
+
+    <!-- Dynamic Curved Sweep connecting the bars into ₹ + H structure -->
+    <path d="M 230 195 C 340 195, 340 285, 230 285 C 290 285, 320 330, 360 387" 
+          fill="none" 
+          stroke="url(#rupeeGrad)" 
+          stroke-width="32" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+  </g>
+
+  <!-- Google 4-Color Accent Orbs -->
+  <circle cx="144" cy="95" r="12" fill="#4285F4" />
+  <circle cx="368" cy="95" r="12" fill="#34A853" />
+  <circle cx="395" cy="415" r="10" fill="#FBBC04" />
+  <circle cx="115" cy="415" r="10" fill="#EA4335" />
 </svg>
