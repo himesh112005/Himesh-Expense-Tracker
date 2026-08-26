@@ -11,8 +11,8 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { TransactionModal } from '@/components/modals/TransactionModal';
 import { deleteTransaction } from '@/lib/db';
 import { useTransactions } from '@/lib/hooks/useTransactions';
-import { ITransaction, ITransactionFilters } from '@/lib/types';
-import { Layers, Plus, Sparkles } from 'lucide-react';
+import { ITransaction, ITransactionFilters, TransactionType } from '@/lib/types';
+import { Sparkles } from 'lucide-react';
 
 const defaultFilters: ITransactionFilters = {
   searchQuery: '',
@@ -28,6 +28,7 @@ export default function DashboardPage() {
 
   // Modals state
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [modalDefaultType, setModalDefaultType] = useState<TransactionType>('expense');
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<ITransaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<ITransaction | null>(null);
@@ -40,7 +41,6 @@ export default function DashboardPage() {
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K / N to open Quick Add)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing inside an input or textarea
       const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -53,10 +53,12 @@ export default function DashboardPage() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setEditingTransaction(null);
+        setModalDefaultType('expense');
         setIsQuickAddOpen(true);
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         setEditingTransaction(null);
+        setModalDefaultType('expense');
         setIsQuickAddOpen(true);
       }
     };
@@ -67,6 +69,7 @@ export default function DashboardPage() {
 
   const handleOpenEdit = (t: ITransaction) => {
     setEditingTransaction(t);
+    setModalDefaultType(t.type);
     setIsQuickAddOpen(true);
   };
 
@@ -93,14 +96,15 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] flex flex-col selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#0A0E17] flex flex-col selection:bg-[#4285F4]/30 selection:text-[#8AB4F8]">
       {/* PWA Install Notification Bar */}
       <PwaInstallBanner />
 
-      {/* Top Navigation */}
+      {/* Top Google Pay Navbar */}
       <Header
         onOpenQuickAdd={() => {
           setEditingTransaction(null);
+          setModalDefaultType('expense');
           setIsQuickAddOpen(true);
         }}
         onOpenBackup={() => setIsBackupOpen(true)}
@@ -110,17 +114,30 @@ export default function DashboardPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Loading / Seeding Notice */}
         {isSeeding && (
-          <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-xs text-indigo-300 flex items-center justify-between animate-pulse">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span>Initializing IndexedDB engine with realistic sample financial records...</span>
-            </div>
+          <div className="p-3.5 rounded-2xl bg-[#4285F4]/10 border border-[#4285F4]/30 text-xs text-[#8AB4F8] flex items-center gap-2.5 animate-pulse">
+            <Sparkles className="w-4 h-4 text-[#4285F4] shrink-0" />
+            <span className="font-semibold">
+              Initializing IndexedDB engine with realistic Indian fintech sample transactions...
+            </span>
           </div>
         )}
 
-        {/* 1. Executive Financial Summary Cards */}
+        {/* 1. Google Pay Hero Account Card & Action Buttons */}
         <section aria-label="Executive Financial Summary">
-          <ExecutiveSummary summary={summary} />
+          <ExecutiveSummary
+            summary={summary}
+            onOpenAddExpense={() => {
+              setEditingTransaction(null);
+              setModalDefaultType('expense');
+              setIsQuickAddOpen(true);
+            }}
+            onOpenAddIncome={() => {
+              setEditingTransaction(null);
+              setModalDefaultType('income');
+              setIsQuickAddOpen(true);
+            }}
+            onOpenBackup={() => setIsBackupOpen(true)}
+          />
         </section>
 
         {/* 2. Visual Analytics & Velocity */}
@@ -131,7 +148,7 @@ export default function DashboardPage() {
           />
         </section>
 
-        {/* 3. Transaction Feed & Ledger Grid */}
+        {/* 3. Google Pay Activity Feed & Ledger */}
         <section aria-label="Transaction Ledger">
           <TransactionFeed
             transactions={transactions}
@@ -141,26 +158,27 @@ export default function DashboardPage() {
             onDelete={handleOpenDelete}
             onOpenQuickAdd={() => {
               setEditingTransaction(null);
+              setModalDefaultType('expense');
               setIsQuickAddOpen(true);
             }}
           />
         </section>
       </main>
 
-      {/* Enterprise Footer */}
-      <footer className="border-t border-panelBorder/70 bg-[#090D14] py-6 text-xs text-slate-500">
+      {/* Footer */}
+      <footer className="border-t border-[#1C2638] bg-[#0A0E17] py-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-400">Himesh Expense Tracker</span>
+            <span className="font-bold text-slate-300">Himesh Pay</span>
             <span>•</span>
-            <span>Next.js 14 App Router</span>
+            <span>Next.js 14 PWA</span>
             <span>•</span>
-            <span>Dexie IndexedDB Persistent Storage</span>
+            <span>Dexie IndexedDB Engine</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400">
-            <span>Production PWA Ready</span>
-            <span>•</span>
             <span>0ms Latency</span>
+            <span>•</span>
+            <span>100% Offline Capable</span>
           </div>
         </div>
       </footer>
@@ -170,6 +188,7 @@ export default function DashboardPage() {
         isOpen={isQuickAddOpen}
         onClose={handleCloseModal}
         editTransaction={editingTransaction}
+        defaultType={modalDefaultType}
       />
 
       {/* Delete Confirmation Modal */}
@@ -181,7 +200,7 @@ export default function DashboardPage() {
         isDeleting={isDeleting}
       />
 
-      {/* Data Backup & Maintenance Modal */}
+      {/* Data Backup Modal */}
       <DataBackupModal
         isOpen={isBackupOpen}
         onClose={() => setIsBackupOpen(false)}

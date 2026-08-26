@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ICategoryDistribution, IVelocityDataPoint } from '@/lib/types';
-import { formatINR } from '@/lib/utils';
+import { CATEGORY_METADATA, formatINR } from '@/lib/utils';
 import {
   Area,
   AreaChart,
@@ -15,7 +14,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Activity, PieChart as PieIcon } from 'lucide-react';
+import {
+  Activity,
+  ArrowUpRight,
+  GraduationCap,
+  Navigation,
+  PieChart as PieIcon,
+  Receipt,
+  Sparkles,
+  TrendingUp,
+  UtensilsCrossed,
+} from 'lucide-react';
 
 interface AnalyticsSectionProps {
   categoryData: ICategoryDistribution[];
@@ -33,20 +42,29 @@ interface CustomTooltipProps {
   label?: string;
 }
 
+const CATEGORY_ICONS = {
+  Food: UtensilsCrossed,
+  Travel: Navigation,
+  College: GraduationCap,
+  Tech: Navigation,
+  Bills: Receipt,
+  Misc: Sparkles,
+};
+
 const CustomCategoryTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload as ICategoryDistribution;
     return (
-      <div className="bg-[#0B0F17] border border-panelBorder p-3 rounded-lg shadow-xl text-xs space-y-1">
+      <div className="bg-[#0C121E] border border-[#223147] p-3.5 rounded-2xl shadow-xl text-xs space-y-1.5 min-w-[150px]">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.color }} />
-          <span className="font-semibold text-slate-100">{data.category}</span>
+          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: data.color }} />
+          <span className="font-bold text-white text-sm">{data.category}</span>
         </div>
-        <div className="text-slate-300 font-bold tabular-nums">
+        <div className="text-[#8AB4F8] font-extrabold text-base tabular-nums">
           {formatINR(data.amount)}
         </div>
-        <div className="text-slate-500 text-[11px]">
-          {data.percentage}% of total outflow ({data.count} items)
+        <div className="text-slate-400 text-[11px]">
+          {data.percentage}% of total spends ({data.count} items)
         </div>
       </div>
     );
@@ -54,21 +72,21 @@ const CustomCategoryTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
-const CustomVelocityTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+const CustomVelocityTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload as IVelocityDataPoint;
     return (
-      <div className="bg-[#0B0F17] border border-panelBorder p-3 rounded-lg shadow-xl text-xs space-y-1.5 min-w-[140px]">
-        <div className="font-semibold text-slate-300 border-b border-panelBorder pb-1">
-          {data.displayDate} ({data.date})
+      <div className="bg-[#0C121E] border border-[#223147] p-3.5 rounded-2xl shadow-xl text-xs space-y-2 min-w-[150px]">
+        <div className="font-bold text-slate-200 border-b border-[#202E44] pb-1">
+          {data.displayDate}
         </div>
-        <div className="flex justify-between items-center text-rose-400">
-          <span>Expense:</span>
+        <div className="flex justify-between items-center text-[#F28B82]">
+          <span>Outflow:</span>
           <span className="font-bold tabular-nums">{formatINR(data.expense)}</span>
         </div>
         {data.income > 0 && (
-          <div className="flex justify-between items-center text-emerald-400">
-            <span>Income:</span>
+          <div className="flex justify-between items-center text-[#81C995]">
+            <span>Inflow:</span>
             <span className="font-bold tabular-nums">+{formatINR(data.income)}</span>
           </div>
         )}
@@ -83,32 +101,39 @@ export function AnalyticsSection({ categoryData, velocityData }: AnalyticsSectio
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* 30-Day Expense Velocity Area Chart (8 Columns) */}
-      <Card className="lg:col-span-7 flex flex-col justify-between">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-indigo-400" />
-            <CardTitle>30-Day Cash Outflow Velocity</CardTitle>
+      {/* 30-Day Expense Velocity Area Chart (7 Columns) */}
+      <div className="lg:col-span-7 rounded-3xl bg-[#121A28] border border-[#223147] shadow-gpay-card p-5 sm:p-6 flex flex-col justify-between space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-[#4285F4]/15 text-[#4285F4] border border-[#4285F4]/30">
+              <Activity className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm sm:text-base">Outflow Velocity</h3>
+              <p className="text-xs text-slate-400">Daily spending trend for past 30 days</p>
+            </div>
           </div>
-          <span className="text-[11px] text-slate-400">Daily Cash Outflow Dynamics</span>
-        </CardHeader>
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1A263A] text-[#8AB4F8] border border-[#2C3E5B]">
+            30-Day Track
+          </span>
+        </div>
 
-        <CardContent className="p-4 pt-2">
+        <div>
           {velocityData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-xs text-slate-500">
-              No velocity data points available.
+            <div className="h-60 flex items-center justify-center text-xs text-slate-500">
+              No velocity records available.
             </div>
           ) : (
-            <div className="h-64 w-full">
+            <div className="h-60 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={velocityData}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                    <linearGradient id="gpayVelocityGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4285F4" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#4285F4" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
                   <XAxis
@@ -116,54 +141,58 @@ export function AnalyticsSection({ categoryData, velocityData }: AnalyticsSectio
                     stroke="#4B5563"
                     fontSize={10}
                     tickLine={false}
-                    axisLine={{ stroke: '#1F2937' }}
+                    axisLine={{ stroke: '#202E44' }}
                     interval="preserveStartEnd"
-                    minTickGap={24}
+                    minTickGap={20}
                   />
                   <YAxis
                     stroke="#4B5563"
                     fontSize={10}
                     tickLine={false}
-                    axisLine={{ stroke: '#1F2937' }}
-                    tickFormatter={(val) => (val >= 1000 ? `₹${(val / 1000).toFixed(0)}k` : `₹${val}`)}
+                    axisLine={{ stroke: '#202E44' }}
+                    tickFormatter={(val) =>
+                      val >= 1000 ? `₹${(val / 1000).toFixed(0)}k` : `₹${val}`
+                    }
                   />
                   <Tooltip content={<CustomVelocityTooltip />} />
                   <Area
                     type="monotone"
                     dataKey="expense"
-                    stroke="#6366F1"
-                    strokeWidth={2}
+                    stroke="#4285F4"
+                    strokeWidth={2.5}
                     fillOpacity={1}
-                    fill="url(#expenseGradient)"
+                    fill="url(#gpayVelocityGradient)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Category Spend Distribution Donut Chart (5 Columns) */}
-      <Card className="lg:col-span-5 flex flex-col justify-between">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <PieIcon className="w-4 h-4 text-amber-400" />
-            <CardTitle>Category Distribution</CardTitle>
+      {/* Category Spend Distribution Donut (5 Columns) */}
+      <div className="lg:col-span-5 rounded-3xl bg-[#121A28] border border-[#223147] shadow-gpay-card p-5 sm:p-6 flex flex-col justify-between space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-[#FBBC04]/15 text-[#FBBC04] border border-[#FBBC04]/30">
+              <PieIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm sm:text-base">Spends by Category</h3>
+              <p className="text-xs text-slate-400">Total: {formatINR(totalExpenseInCategories)}</p>
+            </div>
           </div>
-          <span className="text-[11px] text-slate-400 tabular-nums">
-            {formatINR(totalExpenseInCategories)} Total
-          </span>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-4 pt-2">
+        <div>
           {categoryData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-xs text-slate-500">
-              No expense categories recorded yet.
+            <div className="h-60 flex items-center justify-center text-xs text-slate-500">
+              No categories recorded yet.
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row items-center gap-4">
               {/* Donut */}
-              <div className="h-52 w-52 relative shrink-0 mx-auto">
+              <div className="h-48 w-48 relative shrink-0 mx-auto">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -172,11 +201,11 @@ export function AnalyticsSection({ categoryData, velocityData }: AnalyticsSectio
                       nameKey="category"
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
+                      innerRadius={50}
+                      outerRadius={75}
                       paddingAngle={3}
-                      stroke="#111827"
-                      strokeWidth={2}
+                      stroke="#121A28"
+                      strokeWidth={3}
                     >
                       {categoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -185,42 +214,51 @@ export function AnalyticsSection({ categoryData, velocityData }: AnalyticsSectio
                     <Tooltip content={<CustomCategoryTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
-                {/* Center text */}
+                {/* Center Badge */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] text-slate-400 font-medium">Categories</span>
-                  <span className="text-sm font-bold text-slate-200">{categoryData.length}</span>
+                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                    Categories
+                  </span>
+                  <span className="text-base font-extrabold text-white">
+                    {categoryData.length}
+                  </span>
                 </div>
               </div>
 
               {/* Legend List */}
-              <div className="flex-1 w-full space-y-2 max-h-56 overflow-y-auto pr-1">
-                {categoryData.map((item) => (
-                  <div
-                    key={item.category}
-                    className="flex items-center justify-between text-xs py-1 border-b border-panelBorder/40 last:border-0"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-slate-300 font-medium truncate">{item.category}</span>
+              <div className="flex-1 w-full space-y-2 max-h-52 overflow-y-auto pr-1">
+                {categoryData.map((item) => {
+                  const meta = CATEGORY_METADATA[item.category];
+                  return (
+                    <div
+                      key={item.category}
+                      className="flex items-center justify-between text-xs py-1.5 border-b border-[#1E2B3E]/60 last:border-0"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-slate-200 font-semibold truncate">
+                          {item.category}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-white font-bold tabular-nums">
+                          {formatINR(item.amount, { hideDecimalsIfWhole: true })}
+                        </span>
+                        <span className="text-[11px] text-slate-400 tabular-nums w-8 text-right font-medium">
+                          {item.percentage}%
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-slate-200 font-semibold tabular-nums">
-                        {formatINR(item.amount, { hideDecimalsIfWhole: true })}
-                      </span>
-                      <span className="text-[10px] text-slate-500 tabular-nums w-8 text-right">
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

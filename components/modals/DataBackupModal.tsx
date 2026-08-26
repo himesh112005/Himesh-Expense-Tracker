@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { clearAllData, db, exportData, getAllTransactions, importData, seedSampleData } from '@/lib/db';
+import { clearAllData, exportData, getAllTransactions, importData, seedSampleData } from '@/lib/db';
 import { ITransaction } from '@/lib/types';
-import { downloadFile, formatISTDateTime, generateCSV, validateBackupJSON } from '@/lib/utils';
+import { downloadFile, generateCSV, validateBackupJSON } from '@/lib/utils';
 import {
   AlertCircle,
   AlertTriangle,
@@ -14,6 +13,7 @@ import {
   FileSpreadsheet,
   FileText,
   RefreshCw,
+  ShieldCheck,
   Trash2,
   Upload,
   X,
@@ -29,7 +29,6 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
   const [activeTab, setActiveTab] = useState<'export' | 'import' | 'maintenance'>('export');
   const [importText, setImportText] = useState('');
   const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
-  const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     valid: boolean;
     errors: string[];
@@ -51,10 +50,10 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
       const backup = await exportData();
       const jsonString = JSON.stringify(backup, null, 2);
       const dateStr = new Date().toISOString().split('T')[0];
-      downloadFile(jsonString, `himesh_expense_backup_${dateStr}.json`, 'application/json');
+      downloadFile(jsonString, `himesh_pay_backup_${dateStr}.json`, 'application/json');
       setNotification({
         type: 'success',
-        message: `Successfully exported ${backup.totalRecords} transactions to JSON.`,
+        message: `Exported ${backup.totalRecords} records to JSON backup.`,
       });
     } catch (err) {
       console.error(err);
@@ -70,10 +69,10 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
       const transactions = await getAllTransactions();
       const csvString = generateCSV(transactions);
       const dateStr = new Date().toISOString().split('T')[0];
-      downloadFile(csvString, `himesh_expenses_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+      downloadFile(csvString, `himesh_pay_expenses_${dateStr}.csv`, 'text/csv;charset=utf-8;');
       setNotification({
         type: 'success',
-        message: `Successfully exported ${transactions.length} rows to RFC-compliant CSV.`,
+        message: `Exported ${transactions.length} rows to CSV format.`,
       });
     } catch (err) {
       console.error(err);
@@ -103,7 +102,6 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
     }
 
     try {
-      setIsValidating(true);
       const parsed = JSON.parse(rawText);
       const res = validateBackupJSON(parsed);
       setValidationResult(res);
@@ -112,8 +110,6 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
         valid: false,
         errors: [`Invalid JSON Syntax: ${(err as Error).message}`],
       });
-    } finally {
-      setIsValidating(false);
     }
   };
 
@@ -125,14 +121,14 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
       await importData(validationResult.transactions, importMode === 'overwrite');
       setNotification({
         type: 'success',
-        message: `Imported ${validationResult.transactions.length} transactions successfully (${importMode}).`,
+        message: `Imported ${validationResult.transactions.length} records successfully.`,
       });
       setImportText('');
       setValidationResult(null);
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      setNotification({ type: 'error', message: 'Import execution failed.' });
+      setNotification({ type: 'error', message: 'Import failed.' });
     } finally {
       setIsLoading(false);
     }
@@ -144,19 +140,19 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
       await seedSampleData(true);
       setNotification({
         type: 'success',
-        message: 'Loaded realistic sample data records into IndexedDB.',
+        message: 'Loaded sample data records into IndexedDB.',
       });
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      setNotification({ type: 'error', message: 'Failed to seed sample data.' });
+      setNotification({ type: 'error', message: 'Failed to seed data.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleWipeData = async () => {
-    if (!confirm('CAUTION: Are you sure you want to permanently clear all transactions from local IndexedDB?')) {
+    if (!confirm('CAUTION: Are you sure you want to permanently clear all local transactions?')) {
       return;
     }
 
@@ -165,56 +161,56 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
       await clearAllData();
       setNotification({
         type: 'success',
-        message: 'All local database records have been wiped clean.',
+        message: 'All local IndexedDB data has been wiped.',
       });
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      setNotification({ type: 'error', message: 'Failed to clear database.' });
+      setNotification({ type: 'error', message: 'Failed to clear data.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div
-        className="w-full max-w-xl bg-panel border border-panelBorder rounded-2xl shadow-2xl overflow-hidden my-6 animate-slide-up"
+        className="w-full max-w-lg bg-[#121A28] border border-[#223147] rounded-3xl shadow-2xl overflow-hidden my-6 animate-slide-up"
         role="dialog"
         aria-modal="true"
       >
+        <div className="h-1 w-full gpay-gradient-bar" />
+
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-panelBorder/70 bg-[#0E1522]">
+        <div className="flex items-center justify-between p-5 border-b border-[#1C2638] bg-[#0E1522]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-              <Database className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-[#4285F4]/15 border border-[#4285F4]/30 text-[#4285F4] flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-semibold text-slate-100 text-base">Enterprise Data Center</h2>
-              <p className="text-xs text-slate-400">
-                Data persistence, offline exports, backups & validation
-              </p>
+              <h2 className="font-bold text-white text-base">Account & Data Safety</h2>
+              <p className="text-xs text-slate-400">Offline exports, backups & validation</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            className="text-slate-400 hover:text-slate-200 transition-colors p-2 rounded-full hover:bg-[#1E2B40]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-panelBorder bg-[#090D14] px-5">
+        {/* Tab Selector */}
+        <div className="flex border-b border-[#1C2638] bg-[#0A0E17] px-5">
           <button
             onClick={() => {
               setActiveTab('export');
               setNotification(null);
             }}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'export'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-[#4285F4] text-[#8AB4F8]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -226,9 +222,9 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
               setActiveTab('import');
               setNotification(null);
             }}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'import'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-[#4285F4] text-[#8AB4F8]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -240,21 +236,21 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
               setActiveTab('maintenance');
               setNotification(null);
             }}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'maintenance'
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-[#4285F4] text-[#8AB4F8]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Database Tools
+            Tools
           </button>
         </div>
 
-        {/* Notification Banner */}
+        {/* Notification */}
         {notification && (
           <div
-            className={`p-3.5 mx-5 mt-4 rounded-lg text-xs flex items-center gap-2.5 ${
+            className={`p-3.5 mx-5 mt-4 rounded-2xl text-xs flex items-center gap-2.5 ${
               notification.type === 'success'
                 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
                 : 'bg-rose-500/10 border border-rose-500/20 text-rose-300'
@@ -270,58 +266,53 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
         )}
 
         {/* Body Content */}
-        <div className="p-5">
+        <div className="p-5 sm:p-6">
           {/* TAB 1: EXPORT */}
           {activeTab === 'export' && (
             <div className="space-y-4">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Your data is stored locally in your browser’s IndexedDB. Export an offline backup to
-                safeguard your finances or migrate to another device.
+              <p className="text-xs text-slate-300">
+                Your records remain strictly on this device. Download an offline backup file anytime.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-4 rounded-xl bg-[#090D14] border border-panelBorder flex flex-col justify-between space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-4 rounded-2xl bg-[#0A0E17] border border-[#223147] flex flex-col justify-between space-y-3">
                   <div>
-                    <div className="flex items-center gap-2 text-indigo-400 font-semibold text-sm mb-1">
+                    <div className="flex items-center gap-2 text-[#4285F4] font-bold text-sm mb-1">
                       <FileText className="w-4 h-4" />
                       <span>JSON Backup</span>
                     </div>
                     <p className="text-xs text-slate-400">
-                      Full structured data snapshot. Ideal for restoring or cross-device migrations.
+                      Full structured snapshot for seamless migration.
                     </p>
                   </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
+                  <button
                     onClick={handleExportJSON}
-                    isLoading={isLoading}
-                    className="w-full"
+                    disabled={isLoading}
+                    className="w-full py-2 px-3 rounded-full text-xs font-bold bg-[#4285F4] hover:bg-[#3367D6] text-white flex items-center justify-center gap-1.5 shadow-sm"
                   >
-                    <Download className="w-4 h-4 mr-1.5" />
+                    <Download className="w-3.5 h-3.5" />
                     Download JSON
-                  </Button>
+                  </button>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#090D14] border border-panelBorder flex flex-col justify-between space-y-3">
+                <div className="p-4 rounded-2xl bg-[#0A0E17] border border-[#223147] flex flex-col justify-between space-y-3">
                   <div>
-                    <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm mb-1">
+                    <div className="flex items-center gap-2 text-[#34A853] font-bold text-sm mb-1">
                       <FileSpreadsheet className="w-4 h-4" />
                       <span>CSV Spreadsheet</span>
                     </div>
                     <p className="text-xs text-slate-400">
-                      RFC 4180 compliant format. Ideal for Excel, Google Sheets, and audit reports.
+                      Compatible with Microsoft Excel & Google Sheets.
                     </p>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
+                  <button
                     onClick={handleExportCSV}
-                    isLoading={isLoading}
-                    className="w-full border-panelBorder hover:border-emerald-500/40"
+                    disabled={isLoading}
+                    className="w-full py-2 px-3 rounded-full text-xs font-bold bg-[#1A263A] hover:bg-[#25364E] text-[#81C995] border border-[#34A853]/40 flex items-center justify-center gap-1.5"
                   >
-                    <Download className="w-4 h-4 mr-1.5" />
+                    <Download className="w-3.5 h-3.5" />
                     Download CSV
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -331,10 +322,9 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
           {activeTab === 'import' && (
             <div className="space-y-4">
               <p className="text-xs text-slate-300">
-                Upload or paste a valid JSON backup file. The schema validator checks every record before applying changes.
+                Restore data from a JSON backup file. The schema validator verifies integrity before applying.
               </p>
 
-              {/* Upload trigger */}
               <div className="flex items-center gap-3">
                 <input
                   type="file"
@@ -343,140 +333,106 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <Button
+                <button
                   type="button"
-                  variant="secondary"
-                  size="sm"
                   onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 rounded-full text-xs font-bold bg-[#182336] hover:bg-[#223148] text-[#8AB4F8] border border-[#2B3E5C] flex items-center gap-1.5"
                 >
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  Select .JSON File
-                </Button>
-                <span className="text-xs text-slate-500">or paste JSON payload below</span>
+                  <Upload className="w-3.5 h-3.5" />
+                  Upload .JSON File
+                </button>
               </div>
 
-              {/* Textarea */}
               <div>
                 <textarea
-                  rows={4}
+                  rows={3}
                   placeholder='{"version":"1.0.0","transactions":[...]}'
                   value={importText}
                   onChange={(e) => {
                     setImportText(e.target.value);
                     validateJSON(e.target.value);
                   }}
-                  className="w-full bg-[#090D14] border border-panelBorder rounded-lg p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-[#0A0E17] border border-[#223147] rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-[#4285F4]"
                 />
               </div>
 
-              {/* Validation feedback */}
               {validationResult && (
                 <div
-                  className={`p-3 rounded-lg border text-xs space-y-1 ${
+                  className={`p-3.5 rounded-2xl border text-xs ${
                     validationResult.valid
                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
                       : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-semibold">
-                    {validationResult.valid ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Valid Backup Schema: {validationResult.transactions?.length} records found</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-rose-400" />
-                        <span>Validation Errors:</span>
-                      </>
-                    )}
-                  </div>
-                  {!validationResult.valid && (
-                    <ul className="list-disc list-inside space-y-0.5 text-rose-300/90 pl-1">
-                      {validationResult.errors.slice(0, 4).map((err, i) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
+                  {validationResult.valid ? (
+                    <div className="flex items-center gap-2 font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>Valid Backup: {validationResult.transactions?.length} records found</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="font-bold">Validation Failed:</span>
+                      <ul className="list-disc list-inside text-rose-300/90 pl-1">
+                        {validationResult.errors.slice(0, 3).map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* Import Options & Action */}
               {validationResult?.valid && (
-                <div className="p-3.5 rounded-lg bg-[#090D14] border border-panelBorder space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-300">Conflict Resolution:</span>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="importMode"
-                          value="merge"
-                          checked={importMode === 'merge'}
-                          onChange={() => setImportMode('merge')}
-                          className="accent-indigo-600"
-                        />
-                        Merge
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="importMode"
-                          value="overwrite"
-                          checked={importMode === 'overwrite'}
-                          onChange={() => setImportMode('overwrite')}
-                          className="accent-indigo-600"
-                        />
-                        Overwrite DB
-                      </label>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="emerald"
-                    size="sm"
-                    onClick={handleExecuteImport}
-                    isLoading={isLoading}
-                    className="w-full"
-                  >
-                    Restore {validationResult.transactions?.length} Records ({importMode})
-                  </Button>
-                </div>
+                <button
+                  onClick={handleExecuteImport}
+                  disabled={isLoading}
+                  className="w-full py-2.5 rounded-full text-xs font-bold bg-[#34A853] hover:bg-[#1E8E3E] text-white shadow-md"
+                >
+                  Restore {validationResult.transactions?.length} Transactions
+                </button>
               )}
             </div>
           )}
 
-          {/* TAB 3: MAINTENANCE */}
+          {/* TAB 3: TOOLS */}
           {activeTab === 'maintenance' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#090D14] border border-panelBorder space-y-2">
-                <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
-                  Seed Realistic Sample Dataset
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-[#0A0E17] border border-[#223147] space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Seed Sample Dataset
                 </h4>
                 <p className="text-xs text-slate-400">
-                  Instantly populate the tracker with real-world Indian fintech expense transactions (Swiggy, Metro, College exam fee, Freelance income, etc.) to explore full analytics capabilities.
+                  Load realistic Indian UPI expenses (Swiggy, Metro, Exam Fees, Freelance Payouts).
                 </p>
-                <div className="pt-2">
-                  <Button variant="secondary" size="sm" onClick={handleSeedData} isLoading={isLoading}>
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                <div className="pt-1">
+                  <button
+                    onClick={handleSeedData}
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-full text-xs font-bold bg-[#141C2B] hover:bg-[#1E2B40] text-slate-200 border border-[#223147] flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
                     Load Sample Data
-                  </Button>
+                  </button>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-2">
-                <div className="flex items-center gap-2 text-rose-400 font-semibold text-xs uppercase tracking-wider">
+              <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 space-y-2">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
                   <AlertTriangle className="w-4 h-4" />
-                  <span>Factory Reset (Wipe All Data)</span>
+                  <span>Factory Reset</span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  Permanently deletes all transaction records from your browser’s IndexedDB. Export a backup beforehand if needed.
+                  Permanently wipe all transaction records from local IndexedDB.
                 </p>
-                <div className="pt-2">
-                  <Button variant="danger" size="sm" onClick={handleWipeData} isLoading={isLoading}>
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                <div className="pt-1">
+                  <button
+                    onClick={handleWipeData}
+                    disabled={isLoading}
+                    className="px-4 py-2 rounded-full text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                     Wipe Database
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -484,10 +440,13 @@ export function DataBackupModal({ isOpen, onClose, onSuccess }: DataBackupModalP
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end p-4 bg-[#0E1522] border-t border-panelBorder">
-          <Button variant="outline" size="sm" onClick={onClose}>
+        <div className="p-4 bg-[#0E1522] border-t border-[#1C2638] flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 rounded-full text-xs font-bold bg-[#182336] text-slate-300 hover:text-white"
+          >
             Close
-          </Button>
+          </button>
         </div>
       </div>
     </div>

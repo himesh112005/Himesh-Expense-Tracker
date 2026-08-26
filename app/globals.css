@@ -1,28 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: #0B0F17;
-    --foreground: #F8FAFC;
+    --background: #0A0E17;
+    --foreground: #F1F5F9;
   }
 
   * {
-    border-color: #1F2937;
+    border-color: #202E44;
   }
 
   body {
-    background-color: #0B0F17;
-    color: #F8FAFC;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: #0A0E17;
+    color: #F1F5F9;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Strict tabular numerals for financial figures */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
@@ -30,24 +31,24 @@
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F17;
+  background: #0A0E17;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
-  border-radius: 4px;
+  background: #202E44;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #2E3E5B;
 }
 
-/* Input spin button removal for clean currency fields */
+/* Input spin button removal */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -56,4 +57,21 @@ input[type='number']::-webkit-outer-spin-button {
 
 input[type='number'] {
   -moz-appearance: textfield;
+}
+
+/* Google 4-Color Gradient Bar */
+.gpay-gradient-bar {
+  background: linear-gradient(
+    90deg,
+    #4285f4 0%,
+    #34a853 33%,
+    #fbbc04 66%,
+    #ea4335 100%
+  );
+}
+
+.gpay-glass {
+  background: rgba(19, 28, 44, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }

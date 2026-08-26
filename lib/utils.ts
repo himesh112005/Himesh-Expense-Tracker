@@ -48,7 +48,6 @@ export function formatINR(
  * Return an ISO string calibrated with IST (+05:30) offset
  */
 export function getISTISOString(d = new Date()): string {
-  // IST is UTC + 5 hours 30 minutes
   const tzOffset = 5.5 * 60 * 60 * 1000;
   const istDate = new Date(d.getTime() + tzOffset);
   return istDate.toISOString();
@@ -96,91 +95,128 @@ export function formatISTDateTime(isoString: string): string {
 }
 
 /**
- * Category styling tokens and icons metadata
+ * Helper to get Relative Date Group for GPay Activity Feed (e.g., "Today", "Yesterday", "24 Aug 2026")
+ */
+export function getRelativeDateGroup(isoString: string): string {
+  try {
+    const target = new Date(isoString);
+    const now = new Date();
+
+    const targetDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffDays = Math.round((todayDate.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
+
+    return formatISTDate(isoString);
+  } catch {
+    return formatISTDate(isoString);
+  }
+}
+
+/**
+ * Category styling tokens and icons metadata (Google Pay pastel circles & vibrant icons)
  */
 export const CATEGORY_METADATA: Record<
   Category,
-  { label: string; color: string; bg: string; border: string; text: string; icon: string }
+  {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+    text: string;
+    circleBg: string;
+    icon: string;
+  }
 > = {
   Food: {
     label: 'Food & Dining',
-    color: '#F59E0B',
+    color: '#FBBC04',
     bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
+    border: 'border-amber-500/30',
     text: 'text-amber-400',
+    circleBg: 'bg-amber-500/15 text-amber-300',
     icon: 'UtensilsCrossed',
   },
   Travel: {
     label: 'Travel & Commute',
-    color: '#06B6D4',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
-    text: 'text-cyan-400',
+    color: '#4285F4',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    circleBg: 'bg-blue-500/15 text-blue-300',
     icon: 'Navigation',
   },
   College: {
     label: 'College & Education',
-    color: '#8B5CF6',
+    color: '#A855F7',
     bg: 'bg-purple-500/10',
-    border: 'border-purple-500/20',
+    border: 'border-purple-500/30',
     text: 'text-purple-400',
+    circleBg: 'bg-purple-500/15 text-purple-300',
     icon: 'GraduationCap',
   },
   Tech: {
-    label: 'Tech & Gadgets',
-    color: '#6366F1',
-    bg: 'bg-indigo-500/10',
-    border: 'border-indigo-500/20',
-    text: 'text-indigo-400',
+    label: 'Tech & Cloud',
+    color: '#38BDF8',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/30',
+    text: 'text-sky-400',
+    circleBg: 'bg-sky-500/15 text-sky-300',
     icon: 'Cpu',
   },
   Bills: {
     label: 'Bills & Utilities',
-    color: '#F43F5E',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/20',
-    text: 'text-rose-400',
+    color: '#EA4335',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+    circleBg: 'bg-red-500/15 text-red-300',
     icon: 'Receipt',
   },
   Misc: {
     label: 'Miscellaneous',
-    color: '#64748B',
-    bg: 'bg-slate-500/10',
-    border: 'border-slate-500/20',
-    text: 'text-slate-400',
+    color: '#34A853',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    circleBg: 'bg-emerald-500/15 text-emerald-300',
     icon: 'Sparkles',
   },
 };
 
 /**
- * Payment mode tokens
+ * Payment mode tokens with Google Pay aesthetic tags
  */
 export const PAYMENT_MODE_METADATA: Record<
   PaymentMode,
   { label: string; color: string; badgeClass: string; icon: string }
 > = {
   UPI: {
-    label: 'UPI',
-    color: '#10B981',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    label: 'UPI (GPay)',
+    color: '#4285F4',
+    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
     icon: 'Smartphone',
   },
   Cash: {
-    label: 'Cash',
-    color: '#F59E0B',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    label: 'Cash Wallet',
+    color: '#FBBC04',
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
     icon: 'Banknote',
   },
   Card: {
-    label: 'Card',
-    color: '#6366F1',
-    badgeClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    label: 'Debit/Credit Card',
+    color: '#A855F7',
+    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
     icon: 'CreditCard',
   },
   NetBanking: {
-    label: 'NetBanking',
-    color: '#06B6D4',
-    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    label: 'Bank Account',
+    color: '#34A853',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
     icon: 'Building2',
   },
 };
@@ -286,9 +322,10 @@ export function validateBackupJSON(rawJson: unknown): {
       );
     }
 
-    const createdAt = typeof t.createdAt === 'string' && !isNaN(Date.parse(t.createdAt))
-      ? t.createdAt
-      : new Date().toISOString();
+    const createdAt =
+      typeof t.createdAt === 'string' && !isNaN(Date.parse(t.createdAt))
+        ? t.createdAt
+        : new Date().toISOString();
 
     if (errors.length <= 10) {
       validatedTransactions.push({

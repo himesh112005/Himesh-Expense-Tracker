@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/Button';
 import { ITransaction } from '@/lib/types';
 import { formatINR, formatISTDate } from '@/lib/utils';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -24,38 +23,38 @@ export function DeleteConfirmModal({
   if (!isOpen || !transaction) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div
-        className="w-full max-w-md bg-panel border border-panelBorder rounded-xl shadow-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-md bg-[#121A28] border border-[#223147] rounded-3xl shadow-2xl overflow-hidden animate-slide-up"
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between p-5 border-b border-panelBorder/70">
-          <div className="flex items-center gap-2.5 text-rose-400">
-            <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
+        <div className="flex items-center justify-between p-5 border-b border-[#1C2638] bg-[#0E1522]">
+          <div className="flex items-center gap-2.5 text-[#EA4335]">
+            <div className="p-2 rounded-2xl bg-[#EA4335]/15 border border-[#EA4335]/30">
               <AlertTriangle className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold text-slate-100 text-base">Confirm Deletion</h3>
+            <h3 className="font-bold text-white text-base">Delete Transaction</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 transition-colors p-1 rounded-md hover:bg-slate-800"
+            className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-[#1E2B40]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-3">
-          <p className="text-sm text-slate-300">
-            Are you sure you want to permanently delete this transaction? This action cannot be undone.
+        <div className="p-6 space-y-3">
+          <p className="text-xs text-slate-300">
+            Are you sure you want to remove this record from your local IndexedDB?
           </p>
 
-          <div className="p-3.5 rounded-lg bg-[#0B0F17] border border-panelBorder space-y-1.5">
+          <div className="p-4 rounded-2xl bg-[#0A0E17] border border-[#202E44] space-y-1.5">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-sm text-slate-200">{transaction.title}</span>
+              <span className="font-bold text-sm text-white">{transaction.title}</span>
               <span
-                className={`text-sm font-semibold tabular-nums ${
-                  transaction.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'
+                className={`text-sm font-extrabold tabular-nums ${
+                  transaction.type === 'expense' ? 'text-[#F28B82]' : 'text-[#81C995]'
                 }`}
               >
                 {transaction.type === 'expense' ? '-' : '+'}
@@ -69,13 +68,22 @@ export function DeleteConfirmModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-4 bg-[#0E1522] border-t border-panelBorder">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isDeleting}>
+        <div className="flex items-center justify-end gap-2.5 p-4 bg-[#0E1522] border-t border-[#1C2638]">
+          <button
+            onClick={onClose}
+            disabled={isDeleting}
+            className="px-4 py-2 rounded-full text-xs font-semibold bg-[#182336] hover:bg-[#223148] text-slate-300"
+          >
             Cancel
-          </Button>
-          <Button variant="danger" size="sm" onClick={onConfirm} isLoading={isDeleting}>
-            Delete Record
-          </Button>
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-5 py-2 rounded-full text-xs font-bold bg-[#EA4335] hover:bg-[#D93025] text-white flex items-center gap-1.5 shadow-sm"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {isDeleting ? 'Deleting...' : 'Delete Record'}
+          </button>
         </div>
       </div>
     </div>
