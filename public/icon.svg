@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#0B0F17"/>
+  <circle cx="256" cy="256" r="210" fill="#111827" stroke="#1F2937" stroke-width="8"/>
+  <circle cx="256" cy="256" r="160" fill="url(#grad)" />
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+  <!-- Rupee Symbol -->
+  <text x="50%" y="58%" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="220" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">₹</text>
+  <!-- Accent Dots -->
+  <circle cx="370" cy="140" r="18" fill="#10B981" />
+  <circle cx="140" cy="370" r="18" fill="#F59E0B" />
+</svg>
