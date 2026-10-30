@@ -3,21 +3,27 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   clearAllData,
+  clearDemoData,
   db,
+  getAllAccounts,
   getCategoryDistribution,
   getFilteredTransactions,
   getMonthlySummary,
-  getVelocityData,
+  getPeriodSummary,
+  getPeriodVelocity,
   seedSampleData,
 } from '../db';
 import {
+  IAccount,
   ICategoryDistribution,
   IMonthlySummary,
+  IPeriodSummary,
   ITransaction,
   ITransactionFilters,
   IVelocityDataPoint,
+  TrackingPeriod,
 } from '../types';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const defaultMonthlySummary: IMonthlySummary = {
   totalIncome: 0,
@@ -36,39 +42,43 @@ const defaultMonthlySummary: IMonthlySummary = {
   savingsRate: 0,
 };
 
+const defaultPeriodSummary: IPeriodSummary = {
+  period: 'all',
+  periodLabel: 'All Time',
+  totalIncome: 0,
+  totalExpense: 0,
+  netBalance: 0,
+  dailyAverage: 0,
+  transactionCount: 0,
+  topCategory: null,
+};
+
 export interface UseTransactionsReturn {
   transactions: ITransaction[];
+  accounts: IAccount[];
   summary: IMonthlySummary;
+  periodSummary: IPeriodSummary;
+  activePeriod: TrackingPeriod;
+  setActivePeriod: (period: TrackingPeriod) => void;
   categoryData: ICategoryDistribution[];
   velocityData: IVelocityDataPoint[];
-  isSeeding: boolean;
+  periodVelocity: IVelocityDataPoint[];
+  clearDemoData: () => Promise<number>;
   seedSampleData: (force?: boolean) => Promise<void>;
   clearAllData: () => Promise<void>;
 }
 
 export function useTransactions(filters: ITransactionFilters): UseTransactionsReturn {
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [activePeriod, setActivePeriod] = useState<TrackingPeriod>('monthly');
 
-  // Initialize and seed sample data on first launch if empty
-  useEffect(() => {
-    let isMounted = true;
-    async function initDB() {
-      try {
-        const count = await db.transactions.count();
-        if (count === 0 && isMounted) {
-          setIsSeeding(true);
-          await seedSampleData(false);
-          if (isMounted) setIsSeeding(false);
-        }
-      } catch (err) {
-        console.error('Failed to initialize database:', err);
-        if (isMounted) setIsSeeding(false);
-      }
+  // Query live accounts
+  const accounts = useLiveQuery<IAccount[]>(async () => {
+    try {
+      return await getAllAccounts();
+    } catch (err) {
+      console.error('Error querying accounts:', err);
+      return [];
     }
-    initDB();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Reactive filtered transactions
@@ -89,11 +99,12 @@ export function useTransactions(filters: ITransactionFilters): UseTransactionsRe
       filters.type,
       filters.paymentMode,
       filters.category,
+      filters.accountId,
       filters.sortBy,
     ]
   );
 
-  // Reactive Executive Metrics
+  // Reactive Executive Metrics (overall)
   const summary = useLiveQuery<IMonthlySummary>(
     async () => {
       try {
@@ -104,6 +115,19 @@ export function useTransactions(filters: ITransactionFilters): UseTransactionsRe
       }
     },
     []
+  );
+
+  // Reactive Period-specific Metrics (daily, weekly, monthly, yearly)
+  const periodSummary = useLiveQuery<IPeriodSummary>(
+    async () => {
+      try {
+        return await getPeriodSummary(activePeriod);
+      } catch (err) {
+        console.error('Error computing period summary:', err);
+        return defaultPeriodSummary;
+      }
+    },
+    [activePeriod]
   );
 
   // Reactive Donut chart data
@@ -119,25 +143,30 @@ export function useTransactions(filters: ITransactionFilters): UseTransactionsRe
     []
   );
 
-  // Reactive Velocity data
-  const velocityData = useLiveQuery<IVelocityDataPoint[]>(
+  // Reactive period velocity data
+  const periodVelocity = useLiveQuery<IVelocityDataPoint[]>(
     async () => {
       try {
-        return await getVelocityData(30);
+        return await getPeriodVelocity(activePeriod);
       } catch (err) {
-        console.error('Error computing velocity data:', err);
+        console.error('Error computing period velocity:', err);
         return [];
       }
     },
-    []
+    [activePeriod]
   );
 
   return {
     transactions: transactions ?? [],
+    accounts: accounts ?? [],
     summary: summary ?? defaultMonthlySummary,
+    periodSummary: periodSummary ?? defaultPeriodSummary,
+    activePeriod,
+    setActivePeriod,
     categoryData: categoryData ?? [],
-    velocityData: velocityData ?? [],
-    isSeeding,
+    velocityData: periodVelocity ?? [],
+    periodVelocity: periodVelocity ?? [],
+    clearDemoData,
     seedSampleData,
     clearAllData,
   };

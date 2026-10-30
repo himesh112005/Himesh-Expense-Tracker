@@ -1,13 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Category, IBackupData, ITransaction, PaymentMode } from './types';
+import { Category, IAccount, IBackupData, ITransaction, PaymentMode } from './types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 /**
- * Format currency in Indian Rupee format with strict tabular numerals
+ * Format currency in Indian Rupee format with clean tabular numerals
  */
 export function formatINR(
   amount: number,
@@ -45,16 +45,7 @@ export function formatINR(
 }
 
 /**
- * Return an ISO string calibrated with IST (+05:30) offset
- */
-export function getISTISOString(d = new Date()): string {
-  const tzOffset = 5.5 * 60 * 60 * 1000;
-  const istDate = new Date(d.getTime() + tzOffset);
-  return istDate.toISOString();
-}
-
-/**
- * Format ISO date string to human-readable IST Date (e.g., "26 Aug 2026")
+ * Format ISO date string to human-readable IST Date (e.g., "30 Oct 2026")
  */
 export function formatISTDate(isoString: string): string {
   try {
@@ -71,7 +62,7 @@ export function formatISTDate(isoString: string): string {
 }
 
 /**
- * Format ISO date string to human-readable IST Time (e.g., "10:45 PM")
+ * Format ISO date string to human-readable IST Time (e.g., "3:15 PM")
  */
 export function formatISTTime(isoString: string): string {
   try {
@@ -88,14 +79,14 @@ export function formatISTTime(isoString: string): string {
 }
 
 /**
- * Format ISO date string to combined IST representation
+ * Format ISO date string to combined representation
  */
 export function formatISTDateTime(isoString: string): string {
   return `${formatISTDate(isoString)}, ${formatISTTime(isoString)}`;
 }
 
 /**
- * Helper to get Relative Date Group for GPay Activity Feed (e.g., "Today", "Yesterday", "24 Aug 2026")
+ * Helper to get Relative Date Group (e.g. "Today", "Yesterday", "24 Oct 2026")
  */
 export function getRelativeDateGroup(isoString: string): string {
   try {
@@ -118,7 +109,7 @@ export function getRelativeDateGroup(isoString: string): string {
 }
 
 /**
- * Category styling tokens and icons metadata (Google Pay pastel circles & vibrant icons)
+ * Clean Category metadata (solid monochrome with subtle emerald accent)
  */
 export const CATEGORY_METADATA: Record<
   Category,
@@ -128,96 +119,71 @@ export const CATEGORY_METADATA: Record<
     bg: string;
     border: string;
     text: string;
-    circleBg: string;
-    icon: string;
   }
 > = {
   Food: {
     label: 'Food & Dining',
-    color: '#FBBC04',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    text: 'text-amber-400',
-    circleBg: 'bg-amber-500/15 text-amber-300',
-    icon: 'UtensilsCrossed',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
   Travel: {
     label: 'Travel & Commute',
-    color: '#4285F4',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    text: 'text-blue-400',
-    circleBg: 'bg-blue-500/15 text-blue-300',
-    icon: 'Navigation',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
   College: {
     label: 'College & Education',
-    color: '#A855F7',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    text: 'text-purple-400',
-    circleBg: 'bg-purple-500/15 text-purple-300',
-    icon: 'GraduationCap',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
   Tech: {
-    label: 'Tech & Cloud',
-    color: '#38BDF8',
-    bg: 'bg-sky-500/10',
-    border: 'border-sky-500/30',
-    text: 'text-sky-400',
-    circleBg: 'bg-sky-500/15 text-sky-300',
-    icon: 'Cpu',
+    label: 'Tech & Digital',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
   Bills: {
     label: 'Bills & Utilities',
-    color: '#EA4335',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
-    text: 'text-red-400',
-    circleBg: 'bg-red-500/15 text-red-300',
-    icon: 'Receipt',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
   Misc: {
-    label: 'Miscellaneous',
-    color: '#34A853',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
-    text: 'text-emerald-400',
-    circleBg: 'bg-emerald-500/15 text-emerald-300',
-    icon: 'Sparkles',
+    label: 'General & Misc',
+    color: '#10b981',
+    bg: 'bg-zinc-900',
+    border: 'border-zinc-800',
+    text: 'text-zinc-200',
   },
 };
 
-/**
- * Payment mode tokens with Google Pay aesthetic tags
- */
 export const PAYMENT_MODE_METADATA: Record<
   PaymentMode,
-  { label: string; color: string; badgeClass: string; icon: string }
+  { label: string; badgeClass: string }
 > = {
   UPI: {
-    label: 'UPI (GPay)',
-    color: '#4285F4',
-    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    icon: 'Smartphone',
+    label: 'UPI',
+    badgeClass: 'bg-zinc-900 text-zinc-300 border-zinc-800',
   },
   Cash: {
-    label: 'Cash Wallet',
-    color: '#FBBC04',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    icon: 'Banknote',
+    label: 'Cash',
+    badgeClass: 'bg-zinc-900 text-zinc-300 border-zinc-800',
   },
   Card: {
-    label: 'Debit/Credit Card',
-    color: '#A855F7',
-    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    icon: 'CreditCard',
+    label: 'Card',
+    badgeClass: 'bg-zinc-900 text-zinc-300 border-zinc-800',
   },
   NetBanking: {
-    label: 'Bank Account',
-    color: '#34A853',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    icon: 'Building2',
+    label: 'NetBanking',
+    badgeClass: 'bg-zinc-900 text-zinc-300 border-zinc-800',
   },
 };
 
@@ -225,7 +191,7 @@ export const PAYMENT_MODE_METADATA: Record<
  * RFC 4180 Compliant CSV Export
  */
 export function generateCSV(transactions: ITransaction[]): string {
-  const headers = ['ID', 'Title', 'Amount', 'Type', 'Payment Mode', 'Category', 'Date (IST)', 'Note'];
+  const headers = ['ID', 'Title', 'Amount', 'Type', 'Payment Mode', 'Category', 'Account', 'Date (IST)', 'Note', 'Change Reason'];
   const rows = transactions.map((t) => [
     t.id ? String(t.id) : '',
     `"${(t.title || '').replace(/"/g, '""')}"`,
@@ -233,8 +199,10 @@ export function generateCSV(transactions: ITransaction[]): string {
     t.type,
     t.paymentMode,
     t.category,
+    `"${(t.accountName || '').replace(/"/g, '""')}"`,
     formatISTDateTime(t.createdAt),
     `"${(t.note || '').replace(/"/g, '""')}"`,
+    `"${(t.changeReason || '').replace(/"/g, '""')}"`,
   ]);
 
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
@@ -256,12 +224,13 @@ export function downloadFile(content: string, fileName: string, contentType: str
 }
 
 /**
- * Robust JSON Validator for Backup Restores
+ * JSON Validator for Backup Restores
  */
 export function validateBackupJSON(rawJson: unknown): {
   valid: boolean;
   errors: string[];
   transactions?: ITransaction[];
+  accounts?: IAccount[];
 } {
   const errors: string[] = [];
 
@@ -270,12 +239,16 @@ export function validateBackupJSON(rawJson: unknown): {
   }
 
   let listToValidate: unknown[] = [];
+  let accountsToValidate: unknown[] = [];
   const obj = rawJson as Record<string, unknown>;
 
   if (Array.isArray(rawJson)) {
     listToValidate = rawJson;
   } else if (Array.isArray(obj.transactions)) {
     listToValidate = obj.transactions;
+    if (Array.isArray(obj.accounts)) {
+      accountsToValidate = obj.accounts;
+    }
   } else {
     return {
       valid: false,
@@ -311,15 +284,11 @@ export function validateBackupJSON(rawJson: unknown): {
     }
 
     if (!validPaymentModes.includes(t.paymentMode as PaymentMode)) {
-      errors.push(
-        `Row ${index + 1}: Invalid 'paymentMode' (${String(t.paymentMode)}). Expected: ${validPaymentModes.join(', ')}`
-      );
+      errors.push(`Row ${index + 1}: Invalid payment mode`);
     }
 
     if (!validCategories.includes(t.category as Category)) {
-      errors.push(
-        `Row ${index + 1}: Invalid 'category' (${String(t.category)}). Expected: ${validCategories.join(', ')}`
-      );
+      errors.push(`Row ${index + 1}: Invalid category`);
     }
 
     const createdAt =
@@ -335,9 +304,31 @@ export function validateBackupJSON(rawJson: unknown): {
         type: t.type as 'expense' | 'income',
         paymentMode: t.paymentMode as PaymentMode,
         category: t.category as Category,
+        accountId: typeof t.accountId === 'number' ? t.accountId : undefined,
+        accountName: typeof t.accountName === 'string' ? t.accountName : undefined,
         createdAt,
         note: t.note ? String(t.note).trim() : undefined,
+        changeReason: t.changeReason ? String(t.changeReason).trim() : undefined,
       });
+    }
+  });
+
+  const validatedAccounts: IAccount[] = [];
+  accountsToValidate.forEach((item) => {
+    if (item && typeof item === 'object') {
+      const a = item as Record<string, unknown>;
+      if (a.name && typeof a.name === 'string') {
+        validatedAccounts.push({
+          id: typeof a.id === 'number' ? a.id : undefined,
+          name: a.name.trim(),
+          type: (a.type as any) || 'Bank',
+          accountNumber: a.accountNumber ? String(a.accountNumber) : undefined,
+          balance: Number(a.balance) || 0,
+          isDefault: !!a.isDefault,
+          notes: a.notes ? String(a.notes) : undefined,
+          createdAt: typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString(),
+        });
+      }
     }
   });
 
@@ -345,5 +336,10 @@ export function validateBackupJSON(rawJson: unknown): {
     return { valid: false, errors };
   }
 
-  return { valid: true, errors: [], transactions: validatedTransactions };
+  return {
+    valid: true,
+    errors: [],
+    transactions: validatedTransactions,
+    accounts: validatedAccounts,
+  };
 }
