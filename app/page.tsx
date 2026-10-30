@@ -1,18 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { AccountsSection } from '@/components/dashboard/AccountsSection';
 import { AnalyticsSection } from '@/components/dashboard/AnalyticsSection';
 import { ExecutiveSummary } from '@/components/dashboard/ExecutiveSummary';
 import { Header } from '@/components/dashboard/Header';
 import { PwaInstallBanner } from '@/components/dashboard/PwaInstallBanner';
 import { TransactionFeed } from '@/components/dashboard/TransactionFeed';
+import { AccountModal } from '@/components/modals/AccountModal';
 import { DataBackupModal } from '@/components/modals/DataBackupModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { TransactionModal } from '@/components/modals/TransactionModal';
 import { deleteTransaction } from '@/lib/db';
 import { useTransactions } from '@/lib/hooks/useTransactions';
-import { ITransaction, ITransactionFilters, TransactionType } from '@/lib/types';
-import { Sparkles } from 'lucide-react';
+import { IAccount, ITransaction, ITransactionFilters, TransactionType } from '@/lib/types';
+import { Trash2 } from 'lucide-react';
 
 const defaultFilters: ITransactionFilters = {
   searchQuery: '',
@@ -20,6 +22,7 @@ const defaultFilters: ITransactionFilters = {
   type: 'all',
   paymentMode: 'all',
   category: 'all',
+  accountId: 'all',
   sortBy: 'date_desc',
 };
 
@@ -30,13 +33,37 @@ export default function DashboardPage() {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [modalDefaultType, setModalDefaultType] = useState<TransactionType>('expense');
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<IAccount | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<ITransaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<ITransaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [hasDemoTransactions, setHasDemoTransactions] = useState(false);
 
   // Live IndexedDB query hook
-  const { transactions, summary, categoryData, velocityData, isSeeding } =
-    useTransactions(filters);
+  const {
+    transactions,
+    accounts,
+    summary,
+    periodSummary,
+    activePeriod,
+    setActivePeriod,
+    categoryData,
+    periodVelocity,
+    clearDemoData,
+  } = useTransactions(filters);
+
+  // Check if legacy fake/demo data exists in IndexedDB
+  useEffect(() => {
+    const demoTitles = [
+      'Freelance Frontend Contract',
+      'Hostinger Cloud VPS Hosting',
+      'College Semester Exam Fee',
+      'Swiggy Gourmet Dinner with Friends',
+    ];
+    const exists = transactions.some((t) => demoTitles.includes(t.title));
+    setHasDemoTransactions(exists);
+  }, [transactions]);
 
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K / N to open Quick Add)
   useEffect(() => {
@@ -95,12 +122,17 @@ export default function DashboardPage() {
     }
   };
 
+  const handlePurgeDemo = async () => {
+    await clearDemoData();
+    setHasDemoTransactions(false);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0E17] flex flex-col selection:bg-[#4285F4]/30 selection:text-[#8AB4F8]">
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col selection:bg-emerald-500/20 selection:text-emerald-300">
       {/* PWA Install Notification Bar */}
       <PwaInstallBanner />
 
-      {/* Top Google Pay Navbar */}
+      {/* Top Navbar */}
       <Header
         onOpenQuickAdd={() => {
           setEditingTransaction(null);
@@ -112,20 +144,29 @@ export default function DashboardPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Loading / Seeding Notice */}
-        {isSeeding && (
-          <div className="p-3.5 rounded-2xl bg-[#4285F4]/10 border border-[#4285F4]/30 text-xs text-[#8AB4F8] flex items-center gap-2.5 animate-pulse">
-            <Sparkles className="w-4 h-4 text-[#4285F4] shrink-0" />
-            <span className="font-semibold">
-              Initializing IndexedDB engine with realistic Indian fintech sample transactions...
+        {/* Banner to purge fake demo data if cached in browser */}
+        {hasDemoTransactions && (
+          <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 flex items-center justify-between gap-3">
+            <span className="font-medium">
+              Sample placeholder transactions are present in your local database.
             </span>
+            <button
+              onClick={handlePurgeDemo}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-zinc-700 shrink-0 inline-flex items-center gap-1.5 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remove fake money transactions</span>
+            </button>
           </div>
         )}
 
-        {/* 1. Google Pay Hero Account Card & Action Buttons */}
-        <section aria-label="Executive Financial Summary">
+        {/* 1. Period Tracking & Executive Financial Summary (Daily / Weekly / Monthly / Yearly) */}
+        <section aria-label="Tracking & Financial Summary">
           <ExecutiveSummary
             summary={summary}
+            periodSummary={periodSummary}
+            activePeriod={activePeriod}
+            onPeriodChange={setActivePeriod}
             onOpenAddExpense={() => {
               setEditingTransaction(null);
               setModalDefaultType('expense');
@@ -136,22 +177,38 @@ export default function DashboardPage() {
               setModalDefaultType('income');
               setIsQuickAddOpen(true);
             }}
-            onOpenBackup={() => setIsBackupOpen(true)}
           />
         </section>
 
-        {/* 2. Visual Analytics & Velocity */}
-        <section aria-label="Financial Analytics and Velocity">
+        {/* 2. Account Information & Liquidity (Bank, UPI, Cash) */}
+        <section aria-label="Account Management">
+          <AccountsSection
+            accounts={accounts}
+            onAddAccount={() => {
+              setEditingAccount(null);
+              setIsAccountModalOpen(true);
+            }}
+            onEditAccount={(acc) => {
+              setEditingAccount(acc);
+              setIsAccountModalOpen(true);
+            }}
+          />
+        </section>
+
+        {/* 3. Spend Velocity & Category Analytics */}
+        <section aria-label="Period Analytics">
           <AnalyticsSection
             categoryData={categoryData}
-            velocityData={velocityData}
+            velocityData={periodVelocity}
+            activePeriod={activePeriod}
           />
         </section>
 
-        {/* 3. Google Pay Activity Feed & Ledger */}
-        <section aria-label="Transaction Ledger">
+        {/* 4. Daily Expenses Ledger & Activity Feed */}
+        <section aria-label="Daily Expenses Ledger">
           <TransactionFeed
             transactions={transactions}
+            accounts={accounts}
             filters={filters}
             onFilterChange={setFilters}
             onEdit={handleOpenEdit}
@@ -165,30 +222,38 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#1C2638] bg-[#0A0E17] py-6 text-xs text-slate-500">
+      {/* Clean Footer */}
+      <footer className="border-t border-zinc-800 bg-zinc-950 py-6 text-xs text-zinc-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-300">Himesh Pay</span>
+            <span className="font-heading font-bold text-zinc-300">Himesh Expense Tracker</span>
             <span>•</span>
-            <span>Next.js 14 PWA</span>
+            <span>Local Offline IndexedDB</span>
             <span>•</span>
-            <span>Dexie IndexedDB Engine</span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
             <span>0ms Latency</span>
-            <span>•</span>
-            <span>100% Offline Capable</span>
+          </div>
+          <div className="text-zinc-500">
+            Daily, Weekly, Monthly & Yearly Financial Records
           </div>
         </div>
       </footer>
 
-      {/* Quick Add / Edit Modal */}
+      {/* Transaction Modal (Record / Edit with remarks) */}
       <TransactionModal
         isOpen={isQuickAddOpen}
         onClose={handleCloseModal}
         editTransaction={editingTransaction}
         defaultType={modalDefaultType}
+      />
+
+      {/* Account Modal (Bank / UPI / Cash) */}
+      <AccountModal
+        isOpen={isAccountModalOpen}
+        onClose={() => {
+          setIsAccountModalOpen(false);
+          setEditingAccount(null);
+        }}
+        editAccount={editingAccount}
       />
 
       {/* Delete Confirmation Modal */}

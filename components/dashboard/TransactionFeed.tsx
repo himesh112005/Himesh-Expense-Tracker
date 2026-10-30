@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import {
   Category,
   DateFilterRange,
+  IAccount,
   ITransaction,
   ITransactionFilters,
   PaymentMode,
@@ -14,34 +12,29 @@ import {
 } from '@/lib/types';
 import {
   CATEGORY_METADATA,
-  PAYMENT_MODE_METADATA,
   formatINR,
-  formatISTDate,
   formatISTTime,
   getRelativeDateGroup,
 } from '@/lib/utils';
 import {
   ArrowDownLeft,
-  ArrowUpDown,
   ArrowUpRight,
   Banknote,
   Building2,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   CreditCard,
   Edit2,
-  Filter,
+  FileEdit,
   GraduationCap,
   Layers,
   Navigation,
   Plus,
   Receipt,
-  RotateCcw,
   Search,
   SlidersHorizontal,
   Smartphone,
-  Sparkles,
-  Tag,
   Trash2,
   UtensilsCrossed,
   Wallet,
@@ -50,6 +43,7 @@ import {
 
 interface TransactionFeedProps {
   transactions: ITransaction[];
+  accounts?: IAccount[];
   filters: ITransactionFilters;
   onFilterChange: (newFilters: ITransactionFilters) => void;
   onEdit: (transaction: ITransaction) => void;
@@ -60,11 +54,12 @@ interface TransactionFeedProps {
 const DATE_RANGE_OPTIONS: { id: DateFilterRange; label: string }[] = [
   { id: 'all', label: 'All Time' },
   { id: 'today', label: 'Today' },
-  { id: '7d', label: 'Past 7D' },
-  { id: '30d', label: 'Past 30D' },
+  { id: '7d', label: 'Past 7 Days' },
+  { id: '30d', label: 'Past 30 Days' },
   { id: 'this_month', label: 'This Month' },
   { id: 'last_month', label: 'Last Month' },
-  { id: 'custom', label: 'Custom Date' },
+  { id: 'yearly', label: 'This Year' },
+  { id: 'custom', label: 'Custom Range' },
 ];
 
 const CATEGORY_ICONS: Record<Category, React.ComponentType<{ className?: string }>> = {
@@ -73,11 +68,14 @@ const CATEGORY_ICONS: Record<Category, React.ComponentType<{ className?: string 
   College: GraduationCap,
   Tech: Navigation,
   Bills: Receipt,
-  Misc: Sparkles,
+  Misc: Layers,
 };
+
+const INITIAL_ITEM_LIMIT = 8; // Follows guideline: "Show 6-9 items initially, show more for the rest"
 
 export function TransactionFeed({
   transactions,
+  accounts = [],
   filters,
   onFilterChange,
   onEdit,
@@ -85,6 +83,7 @@ export function TransactionFeed({
   onOpenQuickAdd,
 }: TransactionFeedProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_ITEM_LIMIT);
 
   const handleSearchChange = (val: string) => {
     onFilterChange({ ...filters, searchQuery: val });
@@ -102,6 +101,10 @@ export function TransactionFeed({
     onFilterChange({ ...filters, paymentMode: mode });
   };
 
+  const handleAccountChange = (accId: 'all' | number) => {
+    onFilterChange({ ...filters, accountId: accId });
+  };
+
   const handleCategoryChange = (cat: 'all' | Category) => {
     onFilterChange({ ...filters, category: cat });
   };
@@ -117,6 +120,7 @@ export function TransactionFeed({
       type: 'all',
       paymentMode: 'all',
       category: 'all',
+      accountId: 'all',
       sortBy: 'date_desc',
       customStartDate: undefined,
       customEndDate: undefined,
@@ -129,11 +133,16 @@ export function TransactionFeed({
     filters.type !== 'all' ||
     filters.paymentMode !== 'all' ||
     filters.category !== 'all' ||
+    (filters.accountId && filters.accountId !== 'all') ||
     filters.sortBy !== 'date_desc';
 
-  // Group transactions by relative date (e.g. "Today", "Yesterday", "24 Aug 2026")
+  // Slice transactions according to folding guideline
+  const visibleTransactions = transactions.slice(0, displayLimit);
+  const hasMore = transactions.length > displayLimit;
+
+  // Group visible transactions by relative date
   const groupedTransactions: Record<string, ITransaction[]> = {};
-  transactions.forEach((t) => {
+  visibleTransactions.forEach((t) => {
     const groupKey = getRelativeDateGroup(t.createdAt);
     if (!groupedTransactions[groupKey]) {
       groupedTransactions[groupKey] = [];
@@ -144,39 +153,39 @@ export function TransactionFeed({
   const groupKeys = Object.keys(groupedTransactions);
 
   return (
-    <div className="rounded-3xl bg-[#121A28] border border-[#223147] shadow-gpay-card overflow-hidden">
-      {/* Top Header & Search Bar */}
-      <div className="p-5 sm:p-6 border-b border-[#1C2638] space-y-4">
+    <div className="border border-zinc-800 rounded-2xl bg-zinc-950 overflow-hidden space-y-0">
+      {/* Search & Top Action Bar */}
+      <div className="p-5 sm:p-6 border-b border-zinc-800 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Activity & Transactions
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1B263A] text-slate-300 border border-[#2A3B54] tabular-nums">
+              <h2 className="font-heading text-lg sm:text-xl font-bold text-zinc-100">
+                Daily Expenses Ledger
+              </h2>
+              <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-400 tabular-nums">
                 {transactions.length}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Real-time payment history recorded in local IndexedDB
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Record, edit, and audit changes to your transactions anytime.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Search */}
+            {/* Search Input */}
             <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search recipient, tags..."
+                placeholder="Search expense, tags..."
                 value={filters.searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full bg-[#0A0E17] border border-[#223147] rounded-full pl-9.5 pr-8 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#4285F4] transition-all"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-8 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
               {filters.searchQuery && (
                 <button
                   onClick={() => handleSearchChange('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -186,90 +195,113 @@ export function TransactionFeed({
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 sm:px-3 sm:py-2 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1.5 ${
                 showFilters || hasActiveFilters
-                  ? 'bg-[#4285F4]/15 border-[#4285F4] text-[#8AB4F8]'
-                  : 'bg-[#0A0E17] border-[#223147] text-slate-300 hover:bg-[#162132]'
+                  ? 'bg-emerald-950/40 border-emerald-600 text-emerald-400'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
               }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filters</span>
             </button>
           </div>
         </div>
 
-        {/* Quick Filter Pill Badges (Horizontal scroll) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none">
+        {/* Quick Filter Badges */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <button
             onClick={() => handleTypeChange('all')}
-            className={`px-3 py-1.5 rounded-full font-medium shrink-0 transition-all border ${
+            className={`px-3 py-1.5 rounded-lg font-medium shrink-0 border transition-colors ${
               filters.type === 'all'
-                ? 'bg-[#4285F4] text-white border-blue-400/40 shadow-sm'
-                : 'bg-[#0A0E17] text-slate-400 border-[#223147] hover:text-slate-200'
+                ? 'bg-zinc-800 text-zinc-100 border-zinc-700'
+                : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
             }`}
           >
             All
           </button>
           <button
             onClick={() => handleTypeChange('expense')}
-            className={`px-3 py-1.5 rounded-full font-medium shrink-0 transition-all border ${
+            className={`px-3 py-1.5 rounded-lg font-medium shrink-0 border transition-colors ${
               filters.type === 'expense'
-                ? 'bg-[#EA4335]/20 text-[#F28B82] border-[#EA4335]/50'
-                : 'bg-[#0A0E17] text-slate-400 border-[#223147] hover:text-slate-200'
+                ? 'bg-zinc-800 text-rose-300 border-rose-800/60'
+                : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
             }`}
           >
-            Spends (Outflow)
+            Expenses (Outflow)
           </button>
           <button
             onClick={() => handleTypeChange('income')}
-            className={`px-3 py-1.5 rounded-full font-medium shrink-0 transition-all border ${
+            className={`px-3 py-1.5 rounded-lg font-medium shrink-0 border transition-colors ${
               filters.type === 'income'
-                ? 'bg-[#34A853]/20 text-[#81C995] border-[#34A853]/50'
-                : 'bg-[#0A0E17] text-slate-400 border-[#223147] hover:text-slate-200'
+                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-700'
+                : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
             }`}
           >
-            Received (Inflow)
+            Incomes (Inflow)
           </button>
 
-          <span className="text-slate-600 font-bold">|</span>
+          <span className="text-zinc-700">|</span>
 
           {/* Payment Modes */}
           {(['UPI', 'Cash', 'Card', 'NetBanking'] as PaymentMode[]).map((pm) => (
             <button
               key={pm}
               onClick={() => handlePaymentModeChange(filters.paymentMode === pm ? 'all' : pm)}
-              className={`px-3 py-1.5 rounded-full font-medium shrink-0 transition-all border ${
+              className={`px-3 py-1.5 rounded-lg font-medium shrink-0 border transition-colors ${
                 filters.paymentMode === pm
-                  ? 'bg-[#4285F4]/20 text-[#8AB4F8] border-[#4285F4]/50'
-                  : 'bg-[#0A0E17] text-slate-400 border-[#223147] hover:text-slate-200'
+                  ? 'bg-zinc-800 text-emerald-400 border-zinc-700'
+                  : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
               }`}
             >
               {pm}
             </button>
           ))}
 
+          {/* Account Filter */}
+          {accounts.length > 0 && (
+            <>
+              <span className="text-zinc-700">|</span>
+              <select
+                value={filters.accountId || 'all'}
+                onChange={(e) =>
+                  handleAccountChange(
+                    e.target.value === 'all' ? 'all' : Number(e.target.value)
+                  )
+                }
+                className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-zinc-300 focus:outline-none"
+              >
+                <option value="all">All Accounts</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 shrink-0 hover:bg-rose-500/20 transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 bg-rose-950/30 border border-rose-800/40 shrink-0 hover:bg-rose-950/50 transition-colors"
             >
               Reset Filters
             </button>
           )}
         </div>
 
-        {/* Expandable Advanced Filters */}
+        {/* Expandable Filters */}
         {showFilters && (
-          <div className="p-4 rounded-2xl bg-[#0A0E17] border border-[#223147] text-xs space-y-3 animate-slide-down">
+          <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Date Range
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                  Time Period
                 </label>
                 <select
                   value={filters.dateRange}
                   onChange={(e) => handleDateRangeChange(e.target.value as DateFilterRange)}
-                  className="w-full bg-[#121A28] border border-[#223147] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#4285F4]"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
                 >
                   {DATE_RANGE_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id}>
@@ -280,13 +312,13 @@ export function TransactionFeed({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
                   Category
                 </label>
                 <select
                   value={filters.category}
                   onChange={(e) => handleCategoryChange(e.target.value as 'all' | Category)}
-                  className="w-full bg-[#121A28] border border-[#223147] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#4285F4]"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="all">All Categories</option>
                   {(['Food', 'Travel', 'College', 'Tech', 'Bills', 'Misc'] as Category[]).map(
@@ -300,13 +332,13 @@ export function TransactionFeed({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
                   Sort Order
                 </label>
                 <select
                   value={filters.sortBy}
                   onChange={(e) => handleSortChange(e.target.value as ITransactionFilters['sortBy'])}
-                  className="w-full bg-[#121A28] border border-[#223147] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#4285F4]"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="date_desc">Newest First</option>
                   <option value="date_asc">Oldest First</option>
@@ -316,29 +348,28 @@ export function TransactionFeed({
               </div>
             </div>
 
-            {/* Custom Date Pickers */}
             {filters.dateRange === 'custom' && (
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#1C2638]">
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-800">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Start Date</label>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Start Date</label>
                   <input
                     type="date"
                     value={filters.customStartDate || ''}
                     onChange={(e) =>
                       onFilterChange({ ...filters, customStartDate: e.target.value })
                     }
-                    className="w-full bg-[#121A28] border border-[#223147] rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#4285F4]"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">End Date</label>
+                  <label className="block text-[11px] text-zinc-400 mb-1">End Date</label>
                   <input
                     type="date"
                     value={filters.customEndDate || ''}
                     onChange={(e) =>
                       onFilterChange({ ...filters, customEndDate: e.target.value })
                     }
-                    className="w-full bg-[#121A28] border border-[#223147] rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#4285F4]"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -347,131 +378,136 @@ export function TransactionFeed({
         )}
       </div>
 
-      {/* Main Google Pay Activity List */}
+      {/* Main List */}
       <div>
         {transactions.length === 0 ? (
           <div className="py-16 text-center space-y-3 px-4">
-            <div className="w-14 h-14 rounded-full bg-[#0A0E17] border border-[#223147] flex items-center justify-center mx-auto text-slate-500">
-              <Search className="w-6 h-6 text-slate-400" />
+            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+              <Search className="w-5 h-5 text-emerald-400" />
             </div>
             <div className="space-y-1">
-              <h4 className="text-sm font-bold text-slate-200">No transactions found</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No records match your active filters. Try searching with different keywords or add a new transaction.
+              <h3 className="font-heading text-sm font-semibold text-zinc-200">
+                No transactions recorded
+              </h3>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                No records found. Record your real daily expenses to begin tracking your finances.
               </p>
             </div>
             <div className="pt-2 flex items-center justify-center gap-2">
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-[#182234] border border-[#2A3B52] text-slate-300 hover:text-white"
+                  className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white"
                 >
                   Clear Filters
                 </button>
               )}
               <button
                 onClick={onOpenQuickAdd}
-                className="px-4 py-2 rounded-full text-xs font-bold bg-[#4285F4] text-white shadow-gpay-glow-blue"
+                className="px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
               >
-                + Record Transaction
+                + Record Daily Expense
               </button>
             </div>
           </div>
         ) : (
-          <div className="divide-y divide-[#1C2638]/70">
+          <div className="divide-y divide-zinc-800/80">
             {groupKeys.map((groupDate) => {
               const groupItems = groupedTransactions[groupDate];
               return (
                 <div key={groupDate} className="p-4 sm:p-5 space-y-3">
-                  {/* Date Heading */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                       {groupDate}
                     </span>
-                    <span className="text-[11px] text-slate-500 font-medium">
+                    <span className="text-[11px] text-zinc-500 tabular-nums">
                       {groupItems.length} transactions
                     </span>
                   </div>
 
-                  {/* Transaction Rows for this Date */}
                   <div className="space-y-2">
                     {groupItems.map((t) => {
-                      const catMeta = CATEGORY_METADATA[t.category] || CATEGORY_METADATA.Misc;
-                      const pmMeta =
-                        PAYMENT_MODE_METADATA[t.paymentMode] || PAYMENT_MODE_METADATA.UPI;
                       const isExpense = t.type === 'expense';
-                      const IconComponent = CATEGORY_ICONS[t.category] || Sparkles;
+                      const IconComponent = CATEGORY_ICONS[t.category] || Layers;
 
                       return (
                         <div
                           key={t.id}
-                          className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0C121E]/60 hover:bg-[#162132] border border-transparent hover:border-[#223147] transition-all group"
+                          className="flex items-start sm:items-center justify-between p-3.5 rounded-xl bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-800/70 hover:border-zinc-700 transition-colors group"
                         >
-                          {/* Left: Avatar Icon + Title + Meta */}
-                          <div className="flex items-center gap-3.5 min-w-0">
-                            {/* GPay Circular Avatar */}
-                            <div
-                              className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border ${catMeta.circleBg} ${catMeta.border} shadow-sm`}
-                            >
-                              <IconComponent className="w-5 h-5" />
+                          {/* Left: Icon & Details */}
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 text-zinc-300 mt-0.5 sm:mt-0">
+                              <IconComponent className="w-4 h-4 text-emerald-400" />
                             </div>
 
-                            {/* Details */}
                             <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-white text-sm truncate group-hover:text-[#8AB4F8] transition-colors">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-heading font-semibold text-zinc-100 text-sm truncate">
                                   {t.title}
                                 </h4>
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.2 rounded-full bg-[#182335] text-slate-300 border border-[#25364E] shrink-0">
-                                  <CheckCircle2 className="w-2.5 h-2.5 text-[#34A853]" />
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 shrink-0">
                                   {t.paymentMode}
                                 </span>
+                                {t.accountName && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-emerald-400 shrink-0">
+                                    <Building2 className="w-3 h-3" />
+                                    {t.accountName}
+                                  </span>
+                                )}
                               </div>
 
-                              <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 truncate">
+                              <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5 flex-wrap">
                                 <span>{t.category}</span>
                                 <span>•</span>
                                 <span>{formatISTTime(t.createdAt)}</span>
                                 {t.note && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-slate-500 italic truncate max-w-[150px] sm:max-w-[250px]">
+                                    <span className="text-zinc-400 italic truncate max-w-[200px]">
                                       "{t.note}"
                                     </span>
                                   </>
                                 )}
                               </div>
+
+                              {/* Highlight any transaction modification / remarks */}
+                              {t.changeReason && (
+                                <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-amber-400 bg-amber-950/30 border border-amber-800/50 px-2.5 py-0.5 rounded-md inline-flex">
+                                  <FileEdit className="w-3 h-3 shrink-0" />
+                                  <span>Remarks: {t.changeReason}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
-                          {/* Right: Amount & Action Buttons */}
+                          {/* Right: Amount & Actions */}
                           <div className="flex items-center gap-3 shrink-0 ml-3">
                             <div className="text-right">
                               <div
-                                className={`font-bold tabular-nums text-sm sm:text-base ${
-                                  isExpense ? 'text-[#F28B82]' : 'text-[#81C995]'
+                                className={`font-heading font-bold tabular-nums text-sm sm:text-base ${
+                                  isExpense ? 'text-zinc-100' : 'text-emerald-400'
                                 }`}
                               >
                                 {isExpense ? '-' : '+'}
                                 {formatINR(t.amount)}
                               </div>
-                              <div className="text-[10px] text-slate-500 font-medium">
-                                {isExpense ? 'Paid' : 'Received'}
+                              <div className="text-[10px] text-zinc-500 font-medium">
+                                {isExpense ? 'Paid Out' : 'Received In'}
                               </div>
                             </div>
 
-                            {/* Actions on hover */}
-                            <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => onEdit(t)}
-                                className="p-1.5 rounded-full hover:bg-[#1E2B40] text-slate-400 hover:text-[#8AB4F8] transition-colors"
-                                title="Edit transaction"
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+                                title="Edit transaction & record change reason"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => onDelete(t)}
-                                className="p-1.5 rounded-full hover:bg-[#1E2B40] text-slate-400 hover:text-rose-400 transition-colors"
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition-colors"
                                 title="Delete transaction"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -485,6 +521,19 @@ export function TransactionFeed({
                 </div>
               );
             })}
+
+            {/* "Show more" button for pagination (per guidelines: show 6-9 initially, show more for the rest) */}
+            {hasMore && (
+              <div className="p-4 text-center border-t border-zinc-800">
+                <button
+                  onClick={() => setDisplayLimit((prev) => prev + 10)}
+                  className="px-5 py-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition-colors inline-flex items-center gap-2"
+                >
+                  <span>Show more ({transactions.length - displayLimit} remaining)</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
