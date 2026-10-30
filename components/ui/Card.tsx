@@ -1,24 +1,13 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  glow?: 'emerald' | 'indigo' | 'rose' | 'amber' | 'none';
-}
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Card({ className, glow = 'none', children, ...props }: CardProps) {
-  const glowStyles = {
-    none: '',
-    emerald: 'hover:border-emerald-500/30 hover:shadow-fintech-glow-emerald',
-    indigo: 'hover:border-indigo-500/30 hover:shadow-fintech-glow-indigo',
-    rose: 'hover:border-rose-500/30 hover:shadow-fintech-glow-rose',
-    amber: 'hover:border-amber-500/30',
-  };
-
+export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-panel rounded-xl border border-panelBorder shadow-fintech-card transition-all duration-150 ease-out',
-        glowStyles[glow],
+        'bg-zinc-950 rounded-2xl border border-zinc-800 transition-colors',
         className
       )}
       {...props}
@@ -30,7 +19,7 @@ export function Card({ className, glow = 'none', children, ...props }: CardProps
 
 export function CardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('p-5 border-b border-panelBorder/60 flex items-center justify-between', className)} {...props}>
+    <div className={cn('p-5 border-b border-zinc-800 flex items-center justify-between', className)} {...props}>
       {children}
     </div>
   );
@@ -46,7 +35,7 @@ export function CardContent({ className, children, ...props }: React.HTMLAttribu
 
 export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('text-sm font-semibold text-slate-200 tracking-tight', className)} {...props}>
+    <h3 className={cn('font-heading text-sm font-semibold text-zinc-100 tracking-tight', className)} {...props}>
       {children}
     </h3>
   );
